@@ -17,11 +17,32 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Download Boot Shim Artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: boot-shim
+          path: shim_artifacts/
+
       - name: Build DeviceTree and Boot Image
         run: |
           mkdir -p output/release
           python3 tools/firmware/build_devicetree.py --output output/DeviceTree.bin
-          python3 tools/packaging/package_boot.py --devicetree output/DeviceTree.bin --output output/xnu_boot.img
+          KERNEL_FLAG=""
+          if [ -f "shim_artifacts/boot_shim.bin" ]; then
+            echo "[+] Found compiled boot_shim.bin from CI build."
+            KERNEL_FLAG="--kernel shim_artifacts/boot_shim.bin"
+            cp shim_artifacts/boot_shim.bin output/release/
+            [ -f "shim_artifacts/boot_shim.elf" ] && cp shim_artifacts/boot_shim.elf output/release/
+          elif [ -f "shim/boot_shim.bin" ]; then
+            echo "[+] Found local boot_shim.bin."
+            KERNEL_FLAG="--kernel shim/boot_shim.bin"
+            cp shim/boot_shim.bin output/release/
+            [ -f "shim/boot_shim.elf" ] && cp shim/boot_shim.elf output/release/
+          else
+            echo "[!] No compiled boot shim found. Using fallback stub."
+          fi
+          python3 tools/packaging/package_boot.py $KERNEL_FLAG --devicetree output/DeviceTree.bin --output output/xnu_boot.img
           cp output/DeviceTree.bin output/release/
           cp output/xnu_boot.img output/release/
           cp tools/packaging/flash_port.bat output/release/

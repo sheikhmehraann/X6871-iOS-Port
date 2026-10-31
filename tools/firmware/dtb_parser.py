@@ -55,8 +55,8 @@ class FDTParser:
 
     def parse_nodes(self) -> dict:
         pos = self.off_struct
-        stack = [{}]
-        node_name_stack = ["/"]
+        root = None
+        stack = []
 
         while pos < len(self.data):
             token, = struct.unpack(">I", self.data[pos:pos+4])
@@ -67,12 +67,12 @@ class FDTParser:
                 pos = (name_end + 1 + 3) & ~3
                 new_node = {"_name": name, "_properties": {}, "_children": {}}
                 if stack:
-                    curr = stack[-1]
-                    if "_children" in curr:
-                        curr["_children"][name] = new_node
+                    stack[-1]["_children"][name] = new_node
+                else:
+                    root = new_node
                 stack.append(new_node)
             elif token == 2: # FDT_END_NODE
-                if len(stack) > 1:
+                if stack:
                     stack.pop()
             elif token == 3: # FDT_PROP
                 val_len, name_off = struct.unpack(">2I", self.data[pos:pos+8])
@@ -80,32 +80,46 @@ class FDTParser:
                 val_bytes = self.data[pos:pos+val_len]
                 pos = (pos + val_len + 3) & ~3
                 prop_name = self.get_string(name_off)
-                curr = stack[-1]
-                # Format property representation
-                if val_len == 4:
-                    val = hex(struct.unpack(">I", val_bytes)[0])
-                elif val_len == 8:
-                    val = hex(struct.unpack(">Q", val_bytes)[0])
-                else:
-                    # Check if printable string
-                    try:
-                        s = val_bytes.rstrip(b"\x00").decode("ascii")
-                        if s and all(32 <= ord(c) <= 126 or c in "\r\n\t" for c in s):
-                            val = s
-                        else:
+                if stack:
+                    curr = stack[-1]
+                    # Format property representation
+                    if val_len == 4:
+                        val = hex(struct.unpack(">I", val_bytes)[0])
+                    elif val_len == 8:
+                        val = hex(struct.unpack(">Q", val_bytes)[0])
+                    else:
+                        # Check if printable string
+                        try:
+                            s = val_bytes.rstrip(b"\x00").decode("ascii")
+                            if s and all(32 <= ord(c) <= 126 or c in "\r\n\t\x00" for c in s):
+                                val = [x for x in s.split("\x00") if x] if "\x00" in s else s
+                            else:
+                                val = val_bytes.hex()
+                        except Exception:
                             val = val_bytes.hex()
-                    except:
-                        val = val_bytes.hex()
-                curr["_properties"][prop_name] = val
+                    curr["_properties"][prop_name] = val
             elif token == 4: # FDT_NOP
                 continue
             elif token == 9: # FDT_END
                 break
-        return stack[0] if stack else {}
+        return root if root is not None else {}
 
 def extract_hardware_topology(tree: dict) -> dict:
+    discovered_nodes = {}
+    def walk(node, path=""):
+        name = node.get("_name", "")
+        cur_path = f"{path}/{name}" if path else ("/" + name if name else "")
+        discovered_nodes[cur_path] = node.get("_properties", {})
+        for child in node.get("_children", {}).values():
+            walk(child, cur_path)
+
+    if tree:
+        walk(tree)
+
     topo = {
         "soc": "MediaTek MT6895 (Dimensity 8200 Ultimate)",
+        "verified_from_dtb": len(discovered_nodes) > 0,
+        "total_dtb_nodes_parsed": len(discovered_nodes),
         "memory": {
             "dram_base": "0x40000000",
             "ramdisk_base": "0x66f00000",
@@ -155,6 +169,26 @@ def extract_hardware_topology(tree: dict) -> dict:
             "watchdog_toprgu": "0x10007000"
         }
     }
+
+    # Extract dynamic properties if discovered from DTB
+    for path, props in discovered_nodes.items():
+        if "mali@13000000" in path and "compatible" in props:
+            topo["gpu"]["dtb_path"] = path
+            topo["gpu"]["compatible"] = props["compatible"]
+        elif "gic500@" in path or "gic@" in path:
+            topo["interrupt_controller"]["dtb_path"] = path
+            if "compatible" in props:
+                topo["interrupt_controller"]["compatible"] = props["compatible"]
+        elif "ufshci@" in path:
+            topo["ufs_storage"]["dtb_path"] = path
+            if "compatible" in props:
+                topo["ufs_storage"]["compatible"] = props["compatible"]
+        elif "dsi@" in path and "compatible" in props:
+            topo["display"]["dtb_path"] = path
+            topo["display"]["compatible"] = props["compatible"]
+        elif "spmi@" in path:
+            topo["power_management"]["dtb_path"] = path
+
     return topo
 
 def main():

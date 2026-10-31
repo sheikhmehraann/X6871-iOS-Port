@@ -1,5 +1,7 @@
 {
   "soc": "MediaTek MT6895 (Dimensity 8200 Ultimate)",
+  "verified_from_dtb": true,
+  "total_dtb_nodes_parsed": 1430,
   "memory": {
     "dram_base": "0x40000000",
     "ramdisk_base": "0x66f00000",
@@ -9,7 +11,9 @@
     "type": "ARM GIC-600 / GICv3",
     "gic_distributor": "0x0C000000",
     "gic_redistributor": "0x0C040000",
-    "gic_cpu_interface": "0x0C400000"
+    "gic_cpu_interface": "0x0C400000",
+    "dtb_path": "soc/gic500@0c000000",
+    "compatible": "mediatek,gic500"
   },
   "uart_console": {
     "base": "0x11002000",
@@ -19,10 +23,8 @@
   "ufs_storage": {
     "base": "0x112B0000",
     "version": "UFS 3.1",
-    "compatible": [
-      "mediatek,mt8183-ufshci",
-      "jedec,ufs-2.0"
-    ]
+    "compatible": "mediatek,mt8183-ufshci",
+    "dtb_path": "soc/ufshci@112b0000"
   },
   "display": {
     "controller": "MediaTek DSI / Raydium RM69220",
@@ -31,7 +33,12 @@
     "rdma_base": "0x14006000",
     "resolution": "1080x2436",
     "refresh_rate_hz": 144,
-    "bits_per_pixel": 32
+    "bits_per_pixel": 32,
+    "dtb_path": "soc/dsi@14017000",
+    "compatible": [
+      "mediatek,dsi0",
+      "mediatek,mt6895-dsi"
+    ]
   },
   "gpu": {
     "model": "ARM Mali-G610 MC6",
@@ -41,7 +48,8 @@
       "mediatek,mali",
       "arm,mali-valhall"
     ],
-    "power_interface": "MTCMOS & MT6363 PMIC PWRAP"
+    "power_interface": "MTCMOS & MT6363 PMIC PWRAP",
+    "dtb_path": "mali@13000000"
   },
   "touchscreen": {
     "primary": "FocalTech FT3683G",
@@ -52,6 +60,7 @@
   "power_management": {
     "spmi_base": "0x1C804000",
     "pmic": "MT6363 / MT6375",
-    "watchdog_toprgu": "0x10007000"
+    "watchdog_toprgu": "0x10007000",
+    "dtb_path": "spmi@1c804000/second_pmic@5/regulators/vmch-eint-low"
   }
 }

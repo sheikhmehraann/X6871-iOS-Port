@@ -82,47 +82,80 @@ def get_download_url(share_id: str, share_token: str, file_id: str) -> tuple:
         err_msg = e.read().decode("utf-8", errors="ignore")
         raise RuntimeError(f"Failed to obtain download URL (HTTP {e.code}): {err_msg}")
 
-def download_file(dl_url: str, output_path: str, expected_size: int, chunk_size: int = 4 * 1024 * 1024):
+def download_file(dl_url: str, output_path: str, expected_size: int, chunk_size: int = 4 * 1024 * 1024, max_retries: int = 3):
+    import zipfile
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     temp_path = output_path + ".part"
     existing_bytes = 0
+    hasher = hashlib.sha256()
 
     if os.path.exists(temp_path):
         existing_bytes = os.path.getsize(temp_path)
         print(f"[*] Resuming partial download from byte {existing_bytes:,} / {expected_size:,}")
+        with open(temp_path, "rb") as ef:
+            while chunk := ef.read(chunk_size):
+                hasher.update(chunk)
 
-    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
-    if existing_bytes > 0:
-        headers["Range"] = f"bytes={existing_bytes}-"
-
-    req = urllib.request.Request(dl_url, headers=headers)
-    hasher = hashlib.sha256()
-
-    mode = "ab" if existing_bytes > 0 else "wb"
     start_time = time.time()
     total_downloaded = existing_bytes
 
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp, open(temp_path, mode) as out_f:
-            while True:
-                buf = resp.read(chunk_size)
-                if not buf:
-                    break
-                out_f.write(buf)
-                total_downloaded += len(buf)
-                elapsed = time.time() - start_time
-                speed_mb = (total_downloaded - existing_bytes) / (1024 * 1024) / (elapsed if elapsed > 0 else 1)
-                pct = (total_downloaded / expected_size * 100) if expected_size else 0
-                print(f"\r[*] Progress: {total_downloaded:,}/{expected_size:,} bytes ({pct:.1f}%) @ {speed_mb:.2f} MB/s", end="", flush=True)
+    for attempt in range(1, max_retries + 1):
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)"}
+            if total_downloaded > 0:
+                headers["Range"] = f"bytes={total_downloaded}-"
 
-        print()
-    except Exception as e:
-        print(f"\n[!] Download interrupted: {e}")
-        print(f"[*] Partial file saved at {temp_path}. Rerun to resume.")
-        sys.exit(1)
+            req = urllib.request.Request(dl_url, headers=headers)
+            mode = "ab" if total_downloaded > 0 else "wb"
 
+            with urllib.request.urlopen(req, timeout=60) as resp, open(temp_path, mode) as out_f:
+                while True:
+                    buf = resp.read(chunk_size)
+                    if not buf:
+                        break
+                    out_f.write(buf)
+                    hasher.update(buf)
+                    total_downloaded += len(buf)
+                    elapsed = time.time() - start_time
+                    speed_mb = (total_downloaded - existing_bytes) / (1024 * 1024) / (elapsed if elapsed > 0 else 1)
+                    pct = (total_downloaded / expected_size * 100) if expected_size else 0
+                    print(f"\r[*] Progress: {total_downloaded:,}/{expected_size:,} bytes ({pct:.1f}%) @ {speed_mb:.2f} MB/s", end="", flush=True)
+
+            print()
+            break
+        except Exception as e:
+            print(f"\n[!] Attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                time.sleep(3 * attempt)
+            else:
+                print(f"[*] Partial file saved at {temp_path}. Rerun to resume.")
+                sys.exit(1)
+
+    if expected_size and total_downloaded != expected_size:
+        raise ValueError(f"Size mismatch: downloaded {total_downloaded:,} bytes, expected {expected_size:,} bytes.")
+
+    sha256_digest = hasher.hexdigest()
+    print(f"[+] Download complete. SHA-256: {sha256_digest}")
+
+    print("[*] Validating downloaded archive integrity...")
+    if zipfile.is_zipfile(temp_path):
+        with zipfile.ZipFile(temp_path) as zf:
+            corrupt = zf.testzip()
+            if corrupt:
+                raise ValueError(f"Corrupt zip archive detected at member: {corrupt}")
+        print("[+] Archive integrity validated successfully (no CRC corruption).")
+    else:
+        print("[.] File is not a ZIP container or archive validation skipped.")
+
+    if os.path.exists(output_path):
+        os.remove(output_path)
     os.rename(temp_path, output_path)
-    print(f"[+] Download completed successfully: {output_path}")
+
+    sha_path = output_path + ".sha256"
+    with open(sha_path, "w", encoding="utf-8") as sf:
+        sf.write(f"{sha256_digest}  {os.path.basename(output_path)}\n")
+    print(f"[+] SHA-256 manifest written to {sha_path}")
+    print(f"[+] Target archive ready at: {output_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Transsion FRBox Automated Firmware Downloader")

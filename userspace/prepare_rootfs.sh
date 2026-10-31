@@ -37,7 +37,12 @@ fi
 MOUNT_POINT="$WORK_DIR/mnt"
 mkdir -p "$MOUNT_POINT"
 
+echo "[*] Extracting RootFS filesystem contents with 7z..."
+if command -v 7z >/dev/null 2>&1; then
+    7z x -y "$ROOTFS_DMG" -o"$MOUNT_POINT" >/dev/null 2>&1 || true
+fi
+
 echo "[*] Applying Launchd Surgery..."
-python3 "$(dirname "$0")/launchd_surgery.py" "$MOUNT_POINT" || true
+python3 "$(dirname "$0")/launchd_surgery.py" "$MOUNT_POINT"
 
 echo "[+] iOS RootFS assembly ready at: $WORK_DIR/rootfs_raw.img"

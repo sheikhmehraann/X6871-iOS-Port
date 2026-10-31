@@ -113,6 +113,82 @@ def unpack_vendor_boot_v4(vendor_boot_path: str, out_dir: str) -> dict:
         }
         return info
 
+def unpack_dtbo(dtbo_path: str, out_dir: str) -> dict:
+    os.makedirs(out_dir, exist_ok=True)
+    with open(dtbo_path, "rb") as f:
+        data = f.read()
+
+    if len(data) < 32:
+        raise ValueError("dtbo image too small")
+
+    magic, = struct.unpack(">I", data[:4])
+    if magic != 0xD7B7AB1E:
+        raise ValueError(f"Invalid dtbo magic: {hex(magic)}")
+
+    magic, total_sz, hdr_sz, entry_sz, count, off, pg_sz, ver = struct.unpack(">8I", data[:32])
+    extracted_entries = []
+
+    for i in range(count):
+        e_pos = off + i * entry_sz
+        dt_sz, dt_off, dt_id, dt_rev, dt_custom = struct.unpack(">5I", data[e_pos:e_pos+20])
+        entry_blob = data[dt_off : dt_off + dt_sz]
+        out_dtbo = os.path.join(out_dir, f"dtbo_{i}.dtb")
+        with open(out_dtbo, "wb") as ef:
+            ef.write(entry_blob)
+        extracted_entries.append({
+            "index": i,
+            "size": dt_sz,
+            "offset": dt_off,
+            "id": hex(dt_id),
+            "rev": hex(dt_rev),
+            "output": out_dtbo
+        })
+
+    return {
+        "magic": hex(magic),
+        "total_size": total_sz,
+        "entry_count": count,
+        "page_size": pg_sz,
+        "version": ver,
+        "entries": extracted_entries
+    }
+
+def inspect_vbmeta(vbmeta_path: str) -> dict:
+    if not os.path.exists(vbmeta_path):
+        return {}
+    with open(vbmeta_path, "rb") as f:
+        magic = f.read(4)
+        if magic != b"AVB0":
+            return {"valid": False, "magic": str(magic)}
+        f.seek(4)
+        req_ver_major, req_ver_minor = struct.unpack(">2I", f.read(8))
+        auth_blk_sz, aux_blk_sz = struct.unpack(">2Q", f.read(16))
+        f.seek(128)
+        release_str = f.read(48).rstrip(b"\x00").decode("utf-8", errors="ignore")
+        return {
+            "valid": True,
+            "magic": "AVB0",
+            "avb_version": f"{req_ver_major}.{req_ver_minor}",
+            "auth_block_size": auth_blk_sz,
+            "aux_block_size": aux_blk_sz,
+            "release_string": release_str
+        }
+
+def inspect_lk(lk_path: str) -> dict:
+    if not os.path.exists(lk_path):
+        return {}
+    with open(lk_path, "rb") as f:
+        magic, dsize, name = struct.unpack("<II32s", f.read(40))
+        # MTK image magic is 0x58881688
+        valid = (magic == 0x58881688)
+        return {
+            "valid": valid,
+            "magic": hex(magic),
+            "dsize": dsize,
+            "name": name.rstrip(b"\x00").decode("utf-8", errors="ignore"),
+            "file_size": os.path.getsize(lk_path)
+        }
+
 def main():
     parser = argparse.ArgumentParser(description="Extract and inspect Infinix GT 20 Pro firmware binaries")
     parser.add_argument("--rom-dir", default=r"C:\Users\Admin\Music\Mehrnn\Roms\X6871-16.3.0.155SP22(OP009PF001AZ)", help="Path to unpacked stock ROM directory")
@@ -120,7 +196,14 @@ def main():
     args = parser.parse_args()
 
     print("[*] Inspecting firmware at:", args.rom_dir)
-    manifest = {"partitions": [], "boot": {}, "vendor_boot": {}}
+    manifest = {
+        "partitions": [],
+        "boot": {},
+        "vendor_boot": {},
+        "dtbo": {},
+        "vbmeta": {},
+        "lk": {}
+    }
 
     scatter_txt = os.path.join(args.rom_dir, "MT6895_Android_scatter.txt")
     if os.path.exists(scatter_txt):
@@ -144,6 +227,25 @@ def main():
         print(f"    Kernel Base: {vb_info['kernel_addr']}, Ramdisk Base: {vb_info['ramdisk_addr']}")
         print(f"    DTB Addr: {vb_info['dtb_addr']}, DTB Size: {vb_info['dtb_size']:,} bytes")
         print(f"    Cmdline: {vb_info['cmdline']}")
+
+    dtbo_img = os.path.join(args.rom_dir, "dtbo.img")
+    if os.path.exists(dtbo_img):
+        print("[+] Unpacking dtbo.img...")
+        dtbo_info = unpack_dtbo(dtbo_img, os.path.join(args.out_dir, "dtbo"))
+        manifest["dtbo"] = dtbo_info
+        print(f"    DTBO entries: {dtbo_info['entry_count']}, total size: {dtbo_info['total_size']:,} bytes")
+
+    vbmeta_img = os.path.join(args.rom_dir, "vbmeta.img")
+    if os.path.exists(vbmeta_img):
+        print("[+] Inspecting vbmeta.img...")
+        manifest["vbmeta"] = inspect_vbmeta(vbmeta_img)
+        print(f"    AVB format: {manifest['vbmeta'].get('avb_version')}, release: {manifest['vbmeta'].get('release_string')}")
+
+    lk_img = os.path.join(args.rom_dir, "lk.img")
+    if os.path.exists(lk_img):
+        print("[+] Inspecting lk.img...")
+        manifest["lk"] = inspect_lk(lk_img)
+        print(f"    MediaTek LK: {manifest['lk'].get('name')}, size: {manifest['lk'].get('dsize'):,} bytes")
 
     manifest_path = os.path.join(args.out_dir, "firmware_manifest.json")
     with open(manifest_path, "w", encoding="utf-8") as f:
