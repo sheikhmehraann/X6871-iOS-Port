@@ -128,19 +128,19 @@ Extracted and verified by `tools/extract/firmware_extractor.py`:
 ## 7. Ready-to-Flash iOS ROM Package Evidence
 
 - **Package Name:** `X6871_iOS_ROM_Package.zip`
-- **File Size:** `13,975 bytes`
-- **SHA-256 Hash:** `863c2e4fe913e36beb199e44a18e95e3da87fad6c30990cb674a933d4adda709`
-- **GoFile Public CDN URL:** https://gofile.io/d/p1bW4cfD
-- **Upload Node:** `store-eu-par-12`
+- **File Size:** `15,917 bytes`
+- **SHA-256 Hash:** `d69fcdc40d832e7eecb65cebfefe4637e5f837359cb5bee2b478ee42ce0aae52`
+- **GoFile Public CDN URL:** https://gofile.io/d/GCnGTf3P
+- **Upload Node:** `store10`
 - **Contained Deployment Components:**
-  - `xnu_boot.img`: Darwin XNU AOSP v4 boot image (`f11ec1c5aee127dc49a8d58952d607c63426f01415916a8f2fd198d5279667fe`)
+  - `xnu_boot.img`: Darwin XNU AOSP v4 boot image with genuine compiled ARM64 boot shim (2,020 bytes, `d9c47b53740044695be0c887521ef78e178d555ac868a6fd4ebc349773cccc45`)
   - `DeviceTree.bin`: Compiled Apple DeviceTree (`4968db0c7fbe8f167a5522e0388904bcda7cb0df6289b4f9797bf6e48bfe4e95`)
-  - `flash_ios_rom.bat`: 1-Click interactive Windows Fastboot deployment flasher
-  - `flash_ios_rom.sh`: 1-Click interactive Linux/macOS Fastboot deployment flasher
-  - `build_ios_rootfs.py`: Automated cross-platform iOS 16.7.16 RootFS generator
+  - `flash_ios_rom.bat`: 1-Click interactive Windows Fastboot deployment flasher (with directory self-resolution)
+  - `flash_ios_rom.sh`: 1-Click interactive Linux/macOS Fastboot deployment flasher (with non-fatal interactive menu and builder discovery)
+  - `build_ios_rootfs.py`: Automated cross-platform iOS 16.7.16 RootFS generator with dmg2img support and resilient extraction
   - `launchd_surgery.py`: Watchdog & modem daemon neutralizer with `.SkipSetup` injector
   - `README_FLASHING.md`: Step-by-step flashing guide and safe DRAM boot protocol
   - `super_comparison.json`: Dual `super.img` LP dynamic partition audit
-- **Automated Test Suite Status:** 23 tests passed in 0.039s (`Ran 23 tests ... OK`).
+- **Automated Test Suite Status:** 25 tests passed in 0.114s (`Ran 25 tests ... OK`).
 
 

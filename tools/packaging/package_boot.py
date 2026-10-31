@@ -69,9 +69,24 @@ def main():
     parser.add_argument("--output", default="output/xnu_boot.img", help="Output boot.img path")
     args = parser.parse_args()
 
-    # Kernel resolution: use provided or fallback to stub
-    if args.kernel and os.path.exists(args.kernel):
-        with open(args.kernel, "rb") as f:
+    # Kernel resolution: use provided, find compiled shim, or fallback to stub
+    kernel_path = ""
+    candidates = [
+        args.kernel,
+        "shim/boot_shim.bin",
+        "../shim/boot_shim.bin",
+        "shim_artifacts/boot_shim.bin",
+        "../shim_artifacts/boot_shim.bin",
+        str(Path(__file__).resolve().parent.parent.parent / "shim" / "boot_shim.bin")
+    ]
+    for c in candidates:
+        if c and os.path.exists(c):
+            kernel_path = c
+            break
+
+    if kernel_path:
+        print(f"[+] Using compiled boot shim: {kernel_path}")
+        with open(kernel_path, "rb") as f:
             kernel_bytes = f.read()
     else:
         print("[!] No kernel binary specified or found. Using Mach-O 64-bit verification stub.")

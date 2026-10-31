@@ -58,7 +58,7 @@ class TestRomPackage(unittest.TestCase):
             for exp in expected_files:
                 self.assertIn(exp, names, f"Missing {exp} in ROM Package zip")
 
-            # Check xnu_boot.img magic
+            # Check xnu_boot.img magic and real boot shim code
             boot_data = None
             for n in zf.namelist():
                 if os.path.basename(n) == "xnu_boot.img":
@@ -66,6 +66,39 @@ class TestRomPackage(unittest.TestCase):
                     break
             self.assertIsNotNone(boot_data)
             self.assertTrue(boot_data.startswith(b"ANDROID!"), "xnu_boot.img missing ANDROID! magic")
+            # Ensure kernel section contains real ARM64 instructions, not just stub
+            kernel_magic = boot_data[4096:4100]
+            self.assertEqual(kernel_magic, b"\xdf\x4f\x03\xd5", "xnu_boot.img must contain compiled boot shim entry code")
+
+    def test_mock_build_rootfs_pipeline(self):
+        """Tests build_rootfs_pipeline end-to-end with mock IPSW."""
+        ipsw_path = os.path.join(self.temp_dir.name, "test_restore.ipsw")
+        work_dir = os.path.join(self.temp_dir.name, "work")
+        out_img = os.path.join(self.temp_dir.name, "output_rootfs.img")
+
+        with zipfile.ZipFile(ipsw_path, "w") as zf:
+            zf.writestr("mock_rootfs.dmg", b"DMG_RAW_DATA" * 500)
+
+        success = build_ios_rootfs.build_rootfs_pipeline(
+            ipsw_path=ipsw_path,
+            work_dir=work_dir,
+            output_img=out_img,
+            download_if_missing=False
+        )
+        self.assertTrue(success)
+        self.assertTrue(os.path.exists(out_img))
+        self.assertEqual(os.path.getsize(out_img), 500 * len(b"DMG_RAW_DATA"))
+
+    def test_package_rom_assembly(self):
+        """Validates that package_rom.assemble_rom_package creates valid archive."""
+        sys.path.insert(0, str(REPO_ROOT / "tools" / "packaging"))
+        import package_rom
+        temp_out = os.path.join(self.temp_dir.name, "rom_out")
+        res = package_rom.assemble_rom_package(output_dir=temp_out, upload_gofile=False)
+
+        self.assertTrue(os.path.exists(res["zip_path"]))
+        self.assertTrue(os.path.exists(res["sha_manifest"]))
+        self.assertEqual(len(res["sha256"]), 64)
 
 if __name__ == "__main__":
     unittest.main()

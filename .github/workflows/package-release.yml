@@ -24,33 +24,20 @@ jobs:
           name: boot-shim
           path: shim_artifacts/
 
-      - name: Build DeviceTree and Boot Image
+      - name: Build ROM Package and Boot Image
         run: |
-          mkdir -p output/release
-          python3 tools/firmware/build_devicetree.py --output output/DeviceTree.bin
-          KERNEL_FLAG=""
+          mkdir -p output
           if [ -f "shim_artifacts/boot_shim.bin" ]; then
-            echo "[+] Found compiled boot_shim.bin from CI build."
-            KERNEL_FLAG="--kernel shim_artifacts/boot_shim.bin"
-            cp shim_artifacts/boot_shim.bin output/release/
-            [ -f "shim_artifacts/boot_shim.elf" ] && cp shim_artifacts/boot_shim.elf output/release/
-          elif [ -f "shim/boot_shim.bin" ]; then
-            echo "[+] Found local boot_shim.bin."
-            KERNEL_FLAG="--kernel shim/boot_shim.bin"
-            cp shim/boot_shim.bin output/release/
-            [ -f "shim/boot_shim.elf" ] && cp shim/boot_shim.elf output/release/
-          else
-            echo "[!] No compiled boot shim found. Using fallback stub."
+            echo "[+] Found compiled boot_shim.bin from CI build. Staging to shim/."
+            cp shim_artifacts/boot_shim.bin shim/
+            [ -f "shim_artifacts/boot_shim.elf" ] && cp shim_artifacts/boot_shim.elf shim/
           fi
-          python3 tools/packaging/package_boot.py $KERNEL_FLAG --devicetree output/DeviceTree.bin --output output/xnu_boot.img
-          cp output/DeviceTree.bin output/release/
-          cp output/xnu_boot.img output/release/
-          cp tools/packaging/flash_port.bat output/release/
+          python3 tools/packaging/package_rom.py --output-dir output
 
       - name: Generate SHA-256 Checksums
         run: |
-          cd output/release
-          sha256sum * > SHA256SUMS.txt
+          cd output
+          sha256sum X6871_iOS_ROM_Package.zip > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Upload to GoFile
@@ -58,11 +45,13 @@ jobs:
         env:
           GOFILE_TOKEN: ${{ secrets.GOFILE_TOKEN }}
         run: |
-          tar czf output/X6871-iOS-Port-Release.tar.gz -C output/release .
-          python3 tools/packaging/upload_gofile.py output/X6871-iOS-Port-Release.tar.gz --manifest-out output/gofile_manifest.json
+          python3 tools/packaging/upload_gofile.py output/X6871_iOS_ROM_Package.zip --manifest-out output/rom_package_gofile.json
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: x6871-ios-release-package
-          path: output/release/
+          name: x6871-ios-rom-package
+          path: |
+            output/X6871_iOS_ROM_Package.zip
+            output/X6871_iOS_ROM_Package.zip.sha256
+            output/SHA256SUMS.txt

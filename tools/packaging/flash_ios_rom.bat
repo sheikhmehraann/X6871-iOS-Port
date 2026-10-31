@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 title Infinix GT 20 Pro (X6871) - Native iOS ROM 1-Click Flasher
 color 0B
+cd /d "%~dp0"
 
 echo ===============================================================================
 echo        INFINIX GT 20 PRO (X6871 / MT6895) - NATIVE iOS ROM 1-CLICK FLASHER

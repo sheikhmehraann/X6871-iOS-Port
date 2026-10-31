@@ -124,8 +124,8 @@ X6871-iOS-Port/
 
 For immediate device bring-up on your Infinix GT 20 Pro:
 
-- **Download Package:** [`X6871_iOS_ROM_Package.zip`](https://gofile.io/d/p1bW4cfD) (GoFile Public CDN)
-- **SHA-256:** `863c2e4fe913e36beb199e44a18e95e3da87fad6c30990cb674a933d4adda709`
+- **Download Package:** [`X6871_iOS_ROM_Package.zip`](https://gofile.io/d/GCnGTf3P) (GoFile Public CDN)
+- **SHA-256:** `d69fcdc40d832e7eecb65cebfefe4637e5f837359cb5bee2b478ee42ce0aae52`
 - **Flashing Documentation:** [docs/FLASHING_GUIDE.md](docs/FLASHING_GUIDE.md)
 
 ### Package Contents:
@@ -142,7 +142,7 @@ For immediate device bring-up on your Infinix GT 20 Pro:
 
 ## 6. Quick Start
 
-### 1. Run Test Suite (23 Unit Tests)
+### 1. Run Test Suite (25 Unit Tests)
 ```bash
 python3 -m unittest discover tests/ -p "test_*.py" -v
 ```

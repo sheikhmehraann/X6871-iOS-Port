@@ -38,6 +38,21 @@ def find_7z_binary() -> str:
             return c
     return ""
 
+def find_dmg2img_binary() -> str:
+    """Finds dmg2img executable on Windows, Linux, or macOS."""
+    candidates = [
+        shutil.which("dmg2img"),
+        shutil.which("dmg2img.exe"),
+        r"C:\Program Files\dmg2img\dmg2img.exe",
+        r"C:\Program Files (x86)\dmg2img\dmg2img.exe",
+        "/usr/bin/dmg2img",
+        "/usr/local/bin/dmg2img"
+    ]
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
+    return ""
+
 def download_ipsw(url: str, dest_path: str):
     """Downloads IPSW from Apple CDN with streaming progress."""
     print(f"[*] Downloading genuine Apple IPSW from:\n    {url}")
@@ -92,32 +107,61 @@ def extract_rootfs_dmg(ipsw_path: str, extract_dir: str) -> str:
         print("[+] RootFS DMG extraction finished.")
         return dest_dmg
 
-def unpack_dmg_contents(dmg_path: str, mount_dir: str, seven_zip: str):
+def unpack_dmg_contents(dmg_path: str, mount_dir: str, seven_zip: str) -> bool:
     """Unpacks DMG contents into a directory using 7-Zip."""
     print(f"[*] Unpacking DMG filesystem using 7-Zip: {dmg_path}")
     os.makedirs(mount_dir, exist_ok=True)
     cmd = [seven_zip, "x", "-y", f"-o{mount_dir}", dmg_path]
-    subprocess.run(cmd, check=True)
-    print(f"[+] DMG filesystem contents unpacked into: {mount_dir}")
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(f"[+] DMG filesystem contents unpacked into: {mount_dir}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Warning: 7-Zip could not unpack DMG archive format ({e}). Proceeding with raw block image.")
+        return False
 
 def apply_launchd_surgery(rootfs_dir: str):
     """Executes launchd surgery to eliminate panics on MT6895 hardware."""
-    surgery_script = Path(__file__).resolve().parent / "launchd_surgery.py"
-    if not surgery_script.exists():
-        # Check current dir
-        surgery_script = Path("launchd_surgery.py")
+    try:
+        import launchd_surgery
+        launchd_surgery.apply_surgery(Path(rootfs_dir))
+        return
+    except ImportError:
+        pass
 
-    if not surgery_script.exists():
-        print(f"[!] Warning: launchd_surgery.py not found at {surgery_script}. Performing fallback inline surgery.")
+    candidates = [
+        Path(__file__).resolve().parent / "launchd_surgery.py",
+        Path("launchd_surgery.py"),
+        Path("userspace/launchd_surgery.py"),
+        Path("../userspace/launchd_surgery.py")
+    ]
+    surgery_script = None
+    for c in candidates:
+        if c.exists():
+            surgery_script = c
+            break
+
+    if surgery_script:
+        cmd = [sys.executable, str(surgery_script), rootfs_dir]
+        print(f"[*] Running: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True)
+    else:
+        print("[!] Warning: launchd_surgery.py not found. Performing inline fallback surgery.")
+        for rel in [
+            "System/Library/LaunchDaemons/com.apple.watchdogd.plist",
+            "System/Library/LaunchDaemons/com.apple.CommCenter.plist",
+            "System/Library/LaunchDaemons/com.apple.basebandd.plist",
+            "System/Library/LaunchDaemons/com.apple.symptomsd.plist",
+            "System/Library/LaunchDaemons/com.apple.wifid.plist"
+        ]:
+            target = Path(rootfs_dir) / rel
+            if target.exists():
+                target.unlink()
+                print(f"    [-] Removed panic daemon: {rel}")
         pref_dir = Path(rootfs_dir) / "private" / "var" / "mobile" / "Library" / "Preferences"
         pref_dir.mkdir(parents=True, exist_ok=True)
         (pref_dir / ".SkipSetup").touch()
-        print("[+] Fallback: Injected .SkipSetup activation token.")
-        return
-
-    cmd = [sys.executable, str(surgery_script), rootfs_dir]
-    print(f"[*] Running: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+        print("[+] Injected .SkipSetup activation bypass token.")
 
 def build_rootfs_pipeline(ipsw_path: str = "", work_dir: str = "work/rootfs", output_img: str = "output/ios_rootfs.img", download_if_missing: bool = False):
     """Full end-to-end RootFS assembly pipeline."""
@@ -143,16 +187,24 @@ def build_rootfs_pipeline(ipsw_path: str = "", work_dir: str = "work/rootfs", ou
     mount_dir = os.path.join(work_dir, "extracted_fs")
 
     if seven_zip:
-        unpack_dmg_contents(extracted_dmg, mount_dir, seven_zip)
-        apply_launchd_surgery(mount_dir)
-        print(f"[+] RootFS directory prepped with surgery at: {mount_dir}")
+        if unpack_dmg_contents(extracted_dmg, mount_dir, seven_zip):
+            apply_launchd_surgery(mount_dir)
+            print(f"[+] RootFS directory prepped with surgery at: {mount_dir}")
     else:
-        print("[!] 7-Zip executable not detected. Staging raw DMG as flashable filesystem image directly.")
+        print("[!] 7-Zip executable not detected. DMG unpacked directly.")
 
-    # Stage output image
-    print(f"[*] Staging {output_img}...")
-    shutil.copyfile(extracted_dmg, output_img)
-    print(f"[+] Output iOS RootFS image staged successfully at: {output_img} ({os.path.getsize(output_img):,} bytes)")
+    # Convert or stage output image
+    dmg2img = find_dmg2img_binary()
+    if dmg2img:
+        print(f"[*] Converting DMG to raw block image via dmg2img: {output_img}...")
+        subprocess.run([dmg2img, "-s", extracted_dmg, "-o", output_img], check=True)
+        print(f"[+] Output raw iOS RootFS image generated: {output_img} ({os.path.getsize(output_img):,} bytes)")
+    else:
+        print(f"[*] Staging {output_img} (raw DMG copy)...")
+        shutil.copyfile(extracted_dmg, output_img)
+        print(f"[+] Output iOS RootFS image staged at: {output_img} ({os.path.getsize(output_img):,} bytes)")
+        print(f"    Note: If block flasher requires raw uncompressed sectors, install dmg2img to convert automatically.")
+
     return True
 
 def main():

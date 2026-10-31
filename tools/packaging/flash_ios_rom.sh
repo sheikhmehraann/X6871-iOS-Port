@@ -3,7 +3,7 @@
 # Infinix GT 20 Pro (X6871 / MT6895) - Native iOS ROM 1-Click Flasher
 # Darwin XNU Kernel + iOS 16 Userspace Deployment (Linux / macOS)
 # ==============================================================================
-set -e
+cd "$(dirname "$0")"
 
 echo "==============================================================================="
 echo "       INFINIX GT 20 PRO (X6871 / MT6895) - NATIVE iOS ROM 1-CLICK FLASHER"
@@ -49,7 +49,7 @@ show_menu() {
     echo "==============================================================================="
     echo " [1] Non-Destructive RAM Boot (SAFE - Boots xnu_boot.img in DRAM, leaves ROM intact)"
     echo " [2] Flash Darwin XNU Boot Partition (fastboot flash boot xnu_boot.img)"
-    echo " [3] Build / Stage iOS RootFS Image (Runs build_ios_rootfs.py / prepare_rootfs.sh)"
+    echo " [3] Build / Stage iOS RootFS Image (Runs build_ios_rootfs.py)"
     echo " [4] Flash iOS RootFS to Storage (fastboot flash userdata / dynamic partition)"
     echo " [5] 1-Click Complete Install (Flash XNU Boot + Flash iOS RootFS + Reboot)"
     echo " [6] Bootloader Unlock Helper (fastboot flashing unlock)"
@@ -79,6 +79,16 @@ find_rootfs_img() {
     return 1
 }
 
+find_builder_script() {
+    for candidate in "build_ios_rootfs.py" "userspace/build_ios_rootfs.py" "../userspace/build_ios_rootfs.py"; do
+        if [ -f "$candidate" ]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
 while true; do
     show_menu
     case "$CHOICE" in
@@ -90,7 +100,7 @@ while true; do
                 echo "[!] ERROR: xnu_boot.img not found!"
             else
                 echo "[*] Streaming $BOOT_IMG to DRAM..."
-                $FASTBOOT_BIN boot "$BOOT_IMG"
+                $FASTBOOT_BIN boot "$BOOT_IMG" || echo "[!] Fastboot boot failed."
             fi
             ;;
         2)
@@ -102,17 +112,29 @@ while true; do
             else
                 read -rp "Are you sure you want to flash boot partition? (y/N): " CONFIRM
                 if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
-                    $FASTBOOT_BIN flash boot "$BOOT_IMG"
+                    $FASTBOOT_BIN flash boot "$BOOT_IMG" || echo "[!] Fastboot flash failed."
                 fi
             fi
             ;;
         3)
             echo ""
             echo "[*] Selected: [3] Build / Stage iOS RootFS"
-            if command -v python3 >/dev/null 2>&1; then
-                python3 userspace/build_ios_rootfs.py --download --output output/ios_rootfs.img || true
-            elif [ -f "userspace/prepare_rootfs.sh" ]; then
-                bash userspace/prepare_rootfs.sh
+            BUILDER=$(find_builder_script || true)
+            if [ -z "$BUILDER" ]; then
+                echo "[!] ERROR: build_ios_rootfs.py not found!"
+            elif ! command -v python3 >/dev/null 2>&1; then
+                echo "[!] ERROR: python3 not found in PATH! Please install Python 3."
+            else
+                echo " [A] Provide existing IPSW file path"
+                echo " [B] Automatically download iOS 16.7.16 IPSW from Apple CDN (~6.1 GB)"
+                echo " [C] Back to Main Menu"
+                read -rp "Select [A/B/C]: " RF_OPT
+                if [[ "$RF_OPT" =~ ^[Aa]$ ]]; then
+                    read -rp "Enter full path to iPhone X iOS 16.7.16 IPSW: " IPSW_FILE
+                    python3 "$BUILDER" --ipsw "$IPSW_FILE" --output ios_rootfs.img || true
+                elif [[ "$RF_OPT" =~ ^[Bb]$ ]]; then
+                    python3 "$BUILDER" --download --output ios_rootfs.img || true
+                fi
             fi
             ;;
         4)
