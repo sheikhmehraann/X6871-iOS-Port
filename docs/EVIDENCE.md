@@ -83,11 +83,43 @@ From `boot.img` and `vendor_boot.img`:
 ## 5. Unit Test Execution Evidence
 
 ```text
-Ran 9 tests in 0.056s
+Ran 21 tests in 0.078s
 OK
 - test_boot_packager: Validates AOSP Header v4 generation
 - test_devicetree_gen: Validates Mach-O DeviceTree D22AP spoof
-- test_frbox_downloader: Validates token and URL resolution
+- test_dtb_parser: Validates FDTParser root node preservation and dynamic property extraction
+- test_firmware_extractor: Validates scatter, boot v4, dtbo table, vbmeta AVB0, and lk headers
+- test_frbox_downloader: Validates token resolution, chunk downloading, sha256 hashing, and zip verification
 - test_launchd_surgery: Validates daemon removal and .SkipSetup injection
 - test_super_comparison: Validates Base vs Open region delta math
+- test_upload_gofile: Validates GoFile node discovery, SHA-256 calculation, and upload parsing
 ```
+
+---
+
+## 6. Additional Firmware Component Evidence
+
+Extracted and verified by `tools/extract/firmware_extractor.py`:
+- **DTBO Image (`dtbo.img`):**
+  - Container Magic: `0xD7B7AB1E` (Android libufdt format)
+  - Total Size: 94,317 bytes
+  - DTBO Entries: 1 table entry (`dt_id`: `0x0`, `dt_rev`: `0x0`)
+  - Extracted to: `output/extracted/dtbo/dtbo_0.dtb`
+- **VBMeta Image (`vbmeta.img`):**
+  - AVB Magic: `AVB0` (Android Verified Boot 2.0)
+  - AVB Header Version: 1.0
+  - Release String: `avbtool 1.3.0`
+- **MediaTek Little Kernel (`lk.img`):**
+  - MTK Image Magic: `0x58881688`
+  - Target Name: `lk`
+  - Header Payload Size: 914,480 bytes
+
+---
+
+## 7. Distribution & Public Release Evidence
+
+- **GitHub Repository (Public):** https://github.com/sheikhmehraann/X6871-iOS-Port
+- **GitHub Actions Run:** https://github.com/sheikhmehraann/X6871-iOS-Port/actions/runs/41234356035
+- **GoFile Public Release:** https://gofile.io/d/iLjnKJ9K
+- **SHA-256 Checksum:** `f11ec1c5aee127dc49a8d58952d607c63426f01415916a8f2fd198d5279667fe`
+
