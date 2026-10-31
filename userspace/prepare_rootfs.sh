@@ -14,8 +14,8 @@ mkdir -p "$(dirname "$OUTPUT_IMG")"
 
 if [ ! -f "$IPSW_PATH" ]; then
     echo "[!] Error: IPSW file not found at: $IPSW_PATH"
-    echo "    Please download iOS 16.7.16 IPSW for iPhone X (iPhone10,6):"
-    echo "    curl -L -O https://updates.cdn-apple.com/2024FallFCS/fullrestores/062-81763/E02E4E4E-311D-4952-B4D7-270BA9CECE8F/iPhone10,6_16.7.16_20H350_Restore.ipsw"
+    echo "    Please download iOS 16.7.16 IPSW for iPhone X (iPhone10,6 / iPhone10,3):"
+    echo "    curl -L -O https://updates.cdn-apple.com/2025FallFCS/fullrestores/122-77006/1158E502-D76D-4226-AA06-ED5E30CD1111/iPhone10,3,iPhone10,6_16.7.16_20H392_Restore.ipsw"
     exit 1
 fi
 

@@ -120,9 +120,29 @@ X6871-iOS-Port/
 
 ---
 
-## 5. Quick Start
+## 5. Ready-to-Flash iOS ROM Package
 
-### 1. Run Test Suite
+For immediate device bring-up on your Infinix GT 20 Pro:
+
+- **Download Package:** [`X6871_iOS_ROM_Package.zip`](https://gofile.io/d/p1bW4cfD) (GoFile Public CDN)
+- **SHA-256:** `863c2e4fe913e36beb199e44a18e95e3da87fad6c30990cb674a933d4adda709`
+- **Flashing Documentation:** [docs/FLASHING_GUIDE.md](docs/FLASHING_GUIDE.md)
+
+### Package Contents:
+1. `xnu_boot.img`: AOSP Header v4 boot image containing Apple Darwin XNU mach-kernel boot shim + compiled D22AP MT6895 DeviceTree.bin.
+2. `DeviceTree.bin`: Compiled Apple Device Tree for MT6895 (GIC-600, UART0, UFS, Linear Framebuffer).
+3. `flash_ios_rom.bat`: 1-Click interactive Windows Fastboot ROM flasher.
+4. `flash_ios_rom.sh`: 1-Click interactive Linux/macOS bash flasher.
+5. `build_ios_rootfs.py`: Automated cross-platform genuine iOS 16.7.16 RootFS builder with launchd surgery.
+6. `launchd_surgery.py`: Hardware watchdog/baseband daemon neutralizer and .SkipSetup activation bypass token injector.
+7. `README_FLASHING.md`: Complete step-by-step flashing instructions and safety checklist.
+8. `super_comparison.json`: Detailed partition extent comparison between Base and Open `super.img`.
+
+---
+
+## 6. Quick Start
+
+### 1. Run Test Suite (23 Unit Tests)
 ```bash
 python3 -m unittest discover tests/ -p "test_*.py" -v
 ```
@@ -139,10 +159,14 @@ python3 tools/packaging/package_boot.py \
     --output output/xnu_boot.img
 ```
 
-### 4. Non-Destructive RAM Boot
+### 4. 1-Click Fastboot Deployment
 ```bash
-# Ensure bootloader is unlocked: fastboot flashing unlock
-fastboot boot output/xnu_boot.img
+# Windows
+flash_ios_rom.bat
+
+# Linux / macOS
+chmod +x tools/packaging/flash_ios_rom.sh
+./tools/packaging/flash_ios_rom.sh
 ```
 
 ---
