@@ -1,0 +1,47 @@
+name: Package Release
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  package:
+    name: Assemble Distributable Release Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build DeviceTree and Boot Image
+        run: |
+          mkdir -p output/release
+          python3 tools/firmware/build_devicetree.py --output output/DeviceTree.bin
+          python3 tools/packaging/package_boot.py --devicetree output/DeviceTree.bin --output output/xnu_boot.img
+          cp output/DeviceTree.bin output/release/
+          cp output/xnu_boot.img output/release/
+          cp tools/packaging/flash_port.bat output/release/
+
+      - name: Generate SHA-256 Checksums
+        run: |
+          cd output/release
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload to GoFile
+        continue-on-error: true
+        env:
+          GOFILE_TOKEN: ${{ secrets.GOFILE_TOKEN }}
+        run: |
+          tar czf output/X6871-iOS-Port-Release.tar.gz -C output/release .
+          python3 tools/packaging/upload_gofile.py output/X6871-iOS-Port-Release.tar.gz --manifest-out output/gofile_manifest.json
+
+      - name: Upload Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: x6871-ios-release-package
+          path: output/release/

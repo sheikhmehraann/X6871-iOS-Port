@@ -1,0 +1,38 @@
+name: Download Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Verify FRBox share token and resolve download URL without downloading full 10GB archive'
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      dry_run:
+        type: boolean
+        default: true
+
+jobs:
+  download:
+    name: FRBox Firmware Ingestion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve and verify FRBox download link
+        env:
+          FRBOX_SHARE_ID: ${{ secrets.FRBOX_SHARE_ID }}
+          FRBOX_PWD: ${{ secrets.FRBOX_PWD }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python3 tools/download/frbox_downloader.py --dry-run
+          else
+            python3 tools/download/frbox_downloader.py --output downloads/stock-rom.zip
+          fi

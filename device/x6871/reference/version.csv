@@ -1,0 +1,3 @@
+ver_id,ver_text,desc_en,desc_ch,scatter file,checksum,super,logo,tkv,userdata,md1img,vbmeta
+0,Base,,,Android_scatter.xml,scatter_checksum.xml,super.img,logo.bin,tkv.img,userdata.img,md1img.img,vbmeta.img
+10,Open,,,Open\Open_scatter.xml,Open\scatter_checksum.xml,Open\super.img,Open\logo.bin,Open\tkv.img,userdata.img,Open\md1img.img,Open\vbmeta.img

@@ -1,0 +1,35 @@
+name: Build Boot Shim
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    paths:
+      - "shim/**"
+      - ".github/workflows/build-shim.yml"
+
+jobs:
+  build_shim:
+    name: Compile ARM64 Boot Shim
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 Cross Compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+      - name: Compile Shim
+        run: |
+          make -C shim CROSS_COMPILE=aarch64-linux-gnu-
+          ls -lh shim/boot_shim.bin shim/boot_shim.elf
+
+      - name: Upload Boot Shim Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-shim
+          path: |
+            shim/boot_shim.bin
+            shim/boot_shim.elf

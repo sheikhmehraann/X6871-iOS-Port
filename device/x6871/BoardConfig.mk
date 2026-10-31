@@ -1,0 +1,48 @@
+#
+# SPDX-FileCopyrightText: The LineageOS Project & X6871 Darwin Port
+# SPDX-License-Identifier: Apache-2.0
+#
+
+DEVICE_PATH := device/x6871
+
+# A/B Architecture
+AB_OTA_UPDATER := true
+AB_OTA_PARTITIONS += \
+    boot \
+    odm_dlkm \
+    vendor_dlkm \
+    system \
+    product \
+    system_ext \
+    vendor
+
+BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
+
+# Architecture
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-2a-dotprod
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_VARIANT := cortex-a78
+
+# Bootloader
+TARGET_BOOTLOADER_BOARD_NAME := X6871
+TARGET_NO_BOOTLOADER := true
+
+# Display
+TARGET_SCREEN_DENSITY := 392
+
+# Kernel & MT6895 Memory Base
+BOARD_BOOT_HEADER_VERSION := 4
+BOARD_KERNEL_BASE         := 0x3fff8000
+BOARD_KERNEL_OFFSET       := 0x00008000
+BOARD_KERNEL_PAGESIZE     := 4096
+BOARD_RAMDISK_OFFSET      := 0x26f08000
+BOARD_KERNEL_TAGS_OFFSET  := 0x07c88000
+BOARD_DTB_OFFSET          := 0x07c88000
+BOARD_KERNEL_CMDLINE      := bootopt=64S3,32N2,64N2
+
+# Partitions
+BOARD_FLASH_BLOCK_SIZE := 262144
+BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
+TARGET_BOARD_PLATFORM := mt6895

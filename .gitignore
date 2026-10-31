@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary / Large Workspace Files
+workspace_ipsw/
+downloads/
+tmp/
+work/
+build/
+output/
+dist/
+fakeroot/
+.ccache/
+ccache-bin/
+
+# Proprietary ROM & Apple IPSW binaries
+*.img
+*.bin
+*.raw
+*.cpio
+*.ipsw
+*.dmg
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.iso
+
+# Build artifacts & objects
+*.o
+*.obj
+*.a
+*.dylib
+*.dSYM/
+*.log
+*.map.bin
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini

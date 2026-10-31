@@ -1,0 +1,29 @@
+name: Build iOS RootFS
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build_rootfs:
+    name: Prepare Neutralized iOS 16 Userspace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test Launchd Surgery Pipeline
+        run: |
+          mkdir -p test_rootfs/System/Library/LaunchDaemons
+          touch test_rootfs/System/Library/LaunchDaemons/com.apple.watchdogd.plist
+          touch test_rootfs/System/Library/LaunchDaemons/com.apple.CommCenter.plist
+          touch test_rootfs/System/Library/LaunchDaemons/com.apple.basebandd.plist
+          python3 userspace/launchd_surgery.py test_rootfs/
+          test ! -f test_rootfs/System/Library/LaunchDaemons/com.apple.watchdogd.plist
+          test -f test_rootfs/private/var/mobile/Library/Preferences/.SkipSetup
+          echo "[+] Userspace surgery pipeline validated successfully."

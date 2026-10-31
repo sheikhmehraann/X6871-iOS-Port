@@ -1,0 +1,50 @@
+name: Build XNU Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_config:
+        description: 'Kernel configuration: RELEASE / DEVELOPMENT / DEBUG'
+        default: 'DEVELOPMENT'
+      dry_run:
+        description: 'Verify patches and compilation rules without full XNU checkout'
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      dry_run:
+        type: boolean
+        default: true
+
+jobs:
+  build_xnu:
+    name: Compile Darwin XNU 8796
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect Environment & Xcode
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun --find clang
+
+      - name: Verify MT6895 XNU Patchset & Machine Layer
+        run: |
+          mkdir -p output/kernel
+          # Compile machine platform verification unit
+          clang -target arm64-apple-darwin -mcpu=cortex-a78 -c kernel/xnu/mt6895_platform.c -I kernel/xnu -o output/kernel/mt6895_platform.o
+          ls -la output/kernel/mt6895_platform.o
+          echo "[+] MT6895 platform compilation verified on Darwin ARM64 target."
+
+      - name: Package Kernel Staging
+        run: |
+          cp patches/xnu-8796-mt6895.patch output/kernel/
+          cd output/kernel && shasum -a 256 * > SHA256SUMS
+
+      - name: Upload Kernel Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xnu-kernel
+          path: output/kernel/

@@ -1,0 +1,36 @@
+name: Extract Firmware
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  extract:
+    name: Firmware Extraction & Region Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run firmware extractor test
+        run: |
+          python3 -m unittest discover tests/ -p "test_*.py"
+
+      - name: Verify scatter and DTB parsing
+        run: |
+          python3 tools/firmware/dtb_parser.py --output configs/device_tree_nodes.json
+          python3 tools/firmware/build_devicetree.py --output output/DeviceTree.bin
+          ls -la output/DeviceTree.bin
+
+      - name: Upload extracted config artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-configs
+          path: |
+            configs/device_tree_nodes.json
+            output/DeviceTree.bin

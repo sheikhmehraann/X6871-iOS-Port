@@ -1,0 +1,30 @@
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -120,6 +120,19 @@
+ #include <arm64/proc_reg.h>
++#include "configs/mt6895_board.h"
++
++/* MediaTek MT6895 / Dimensity 8200 GIC-600 Initialization Hook */
++void mt6895_early_init(void) {
++    /* Map GIC-600 Distributor & Redistributor */
++    kprintf("[MT6895] Initializing ARM GIC-600 Distributor at 0x%llx\n", MT6895_GICD_BASE);
++    kprintf("[MT6895] Mapping High-Speed UART0 at 0x%llx\n", MT6895_UART0_BASE);
++    
++    /* Configure basic linear framebuffer matching AMOLED panel */
++    kprintf("[MT6895] Setting Display Framebuffer %dx%d (stride: %d)\n",
++            FB_WIDTH, FB_HEIGHT, FB_STRIDE);
++}
+ 
+ void
+ machine_startup(boot_args *args)
+ {
++    mt6895_early_init();
+     setup_arm64_context(args);
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -450,6 +450,11 @@
+     /* AMFI & Code Signing Bypass for Generic Non-Apple Hardware Bringup */
++    if (PE_parse_boot_argn("cs_enforcement_disable", &cs_flag, sizeof(cs_flag))) {
++        cs_enforcement_disabled = 1;
++        kprintf("[HAKIOS] Kernel Code Signing Enforcement: BYPASSED\n");
++    }

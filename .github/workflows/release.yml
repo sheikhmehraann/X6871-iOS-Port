@@ -1,0 +1,45 @@
+name: Full Port CI & Release Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test_and_validate:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Test Suite
+        run: |
+          python3 -m unittest discover tests/ -p "test_*.py" -v
+
+  build_shim:
+    name: Build Boot Shim
+    needs: test_and_validate
+    uses: ./.github/workflows/build-shim.yml
+
+  build_userspace:
+    name: Validate Userspace Surgery
+    needs: test_and_validate
+    uses: ./.github/workflows/build-ios-root.yml
+
+  package_release:
+    name: Package Release
+    needs: [build_shim, build_userspace]
+    uses: ./.github/workflows/package-release.yml

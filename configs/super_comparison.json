@@ -1,0 +1,200 @@
+{
+  "base_file_size": 6021361312,
+  "open_file_size": 6580663920,
+  "size_delta_bytes": 559302608,
+  "size_delta_mb": 533.39,
+  "partitions_comparison": {
+    "odm_a": {
+      "base_mb": 919.89,
+      "open_mb": 919.89,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "odm_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "odm_dlkm_a": {
+      "base_mb": 4.01,
+      "open_mb": 4.01,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "odm_dlkm_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "product_a": {
+      "base_mb": 431.04,
+      "open_mb": 431.04,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "product_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_a": {
+      "base_mb": 923.01,
+      "open_mb": 923.01,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_dlkm_a": {
+      "base_mb": 7.65,
+      "open_mb": 7.65,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_dlkm_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_ext_a": {
+      "base_mb": 1777.02,
+      "open_mb": 1777.02,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "system_ext_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_carrier_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_carrier_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_company_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_company_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_manifest_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_manifest_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_misc_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_misc_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_overlayfs_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_overlayfs_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_preload_a": {
+      "base_mb": 0.33,
+      "open_mb": 0.33,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_preload_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_product_a": {
+      "base_mb": 725.95,
+      "open_mb": 3112.14,
+      "diff_mb": 2386.19,
+      "has_region_payload": true
+    },
+    "tr_product_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "tr_region_a": {
+      "base_mb": 0.33,
+      "open_mb": 3183.31,
+      "diff_mb": 3182.98,
+      "has_region_payload": true
+    },
+    "tr_region_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "vendor_a": {
+      "base_mb": 951.07,
+      "open_mb": 951.07,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "vendor_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "vendor_dlkm_a": {
+      "base_mb": 23.41,
+      "open_mb": 23.41,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    },
+    "vendor_dlkm_b": {
+      "base_mb": 0.0,
+      "open_mb": 0.0,
+      "diff_mb": 0.0,
+      "has_region_payload": false
+    }
+  }
+}

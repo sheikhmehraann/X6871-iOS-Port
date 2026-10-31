@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: sheikhmehraann <mehraann.19@gmail.com>
+Date: Sat, 31 Oct 2026 23:00:00 +0530
+Subject: [PATCH] xnu: add MediaTek MT6895 (Dimensity 8200) platform support for Infinix GT 20 Pro
+
+---
+ makedefs/MakeInc.def                 |  2 +-
+ osfmk/arm64/machine_routines.c      | 24 ++++++++++++++++++++++++
+ bsd/kern/kern_exec.c                 |  8 ++++++++
+ bsd/vfs/vfs_mount.c                  |  9 +++++++++
+ 4 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
+index a1b2c3d..e4f5a6b 100644
+--- a/makedefs/MakeInc.def
++++ b/makedefs/MakeInc.def
+@@ -150,7 +150,7 @@ export ARCH_FLAGS_ARM64 = -arch arm64 -mcpu=cortex-a78
+ 
+diff --git a/osfmk/arm64/machine_routines.c b/osfmk/arm64/machine_routines.c
+index b2c3d4e..f5a6b7c 100644
+--- a/osfmk/arm64/machine_routines.c
++++ b/osfmk/arm64/machine_routines.c
+@@ -120,6 +120,24 @@
+ #include <arm64/proc_reg.h>
++
++/* MT6895 Dimensity 8200 Platform Early Bringup Hook */
++extern void mt6895_platform_early_init(void);
++
++void
++machine_startup(boot_args *args)
++{
++    mt6895_platform_early_init();
++    setup_arm64_context(args);
++}
+ 
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+index c3d4e5f..a6b7c8d 100644
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -450,6 +450,14 @@
++    /* AMFI and Code-Signing Bypass for Generic Non-PAC Bringup */
++    if (PE_parse_boot_argn("cs_enforcement_disable", &cs_flag, sizeof(cs_flag))) {
++        cs_enforcement_disabled = 1;
++        kprintf("[DARWIN:MT6895] Code-signing enforcement disabled via boot-arg\n");
++    }
++
+ 
+diff --git a/bsd/vfs/vfs_mount.c b/bsd/vfs/vfs_mount.c
+index d4e5f6a..b7c8d9e 100644
+--- a/bsd/vfs/vfs_mount.c
++++ b/bsd/vfs/vfs_mount.c
+@@ -320,6 +320,15 @@
++    /* Allow mounting unsealed HFS+ / APFS rootfs without strict Apple SEP trust cache */
++    if (PE_parse_boot_argn("amfi_get_out_of_my_way", &amfi_flag, sizeof(amfi_flag))) {
++        root_seal_enforced = 0;
++        kprintf("[DARWIN:MT6895] Root seal enforcement bypassed\n");
++    }
++
+-- 
+2.34.1

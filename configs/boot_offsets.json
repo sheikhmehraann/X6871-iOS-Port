@@ -1,0 +1,17 @@
+{
+  "platform": "MT6895",
+  "project": "x6871_h962",
+  "device_model": "Infinix GT 20 Pro (X6871)",
+  "boot_header_version": 4,
+  "kernel_addr": "0x40000000",
+  "ramdisk_addr": "0x66f00000",
+  "page_size": 4096,
+  "default_cmdline": "bootopt=64S3,32N2,64N2 bootconfig",
+  "xnu_recommended_cmdline": "debug=0x14e serial=3 -v keepsyms=1 amfi_get_out_of_my_way=1 cs_enforcement_disable=1",
+  "partitions": {
+    "boot": "67108864",
+    "vendor_boot": "67108864",
+    "dtbo": "8388608",
+    "vbmeta": "12288"
+  }
+}
