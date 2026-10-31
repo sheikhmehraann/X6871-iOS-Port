@@ -3,7 +3,7 @@ CC      := $(CROSS_COMPILE)gcc
 LD      := $(CROSS_COMPILE)ld
 OBJCOPY := $(CROSS_COMPILE)objcopy
 
-CFLAGS  := -Wall -Wextra -O2 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding -mcpu=cortex-a78
+CFLAGS  := -Wall -Wextra -O2 -nostdlib -nostdinc -fno-builtin -fno-stack-protector -ffreestanding -mcpu=cortex-a78 -I.
 LDFLAGS := -T link.ld -nostdlib --build-id=none
 
 SRCS_C := main.c uart.c mmu.c

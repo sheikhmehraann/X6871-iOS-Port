@@ -1,3 +1,4 @@
+#include "types.h"
 #include "apple_boot.h"
 #include "uart.h"
 #include "mmu.h"

@@ -1,7 +1,7 @@
 #ifndef SHIM_UART_H
 #define SHIM_UART_H
 
-#include <stdint.h>
+#include "types.h"
 
 #define MT6895_UART0_BASE 0x11002000UL
 

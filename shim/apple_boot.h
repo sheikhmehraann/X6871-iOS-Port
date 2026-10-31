@@ -1,7 +1,7 @@
 #ifndef SHIM_APPLE_BOOT_H
 #define SHIM_APPLE_BOOT_H
 
-#include <stdint.h>
+#include "types.h"
 
 #define BOOT_ARGS_REVISION 1
 #define BOOT_ARGS_VERSION 2

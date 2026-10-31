@@ -1,7 +1,7 @@
 #ifndef SHIM_MMU_H
 #define SHIM_MMU_H
 
-#include <stdint.h>
+#include "types.h"
 
 #define PAGE_SIZE 4096UL
 #define BLOCK_SIZE_2MB (2UL * 1024 * 1024)
